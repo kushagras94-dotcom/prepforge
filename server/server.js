@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
-
+const interviewRoutes = require('./src/routes/interviewRoutes');
 
 connectDB();
 
@@ -15,7 +15,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-app.use('/api/auth',authRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/interview', interviewRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
