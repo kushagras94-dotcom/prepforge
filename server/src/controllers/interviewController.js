@@ -1,5 +1,6 @@
 const Transcript = require('../models/Transcript');
-const { getNextQuestion } = require('../services/aiService');
+const Scorecard = require('../models/Scorecard');
+const { getNextQuestion, generateScorecard } = require('../services/aiService');
 
 // POST /api/interview/start
 exports.startInterview = async (req, res) => {
@@ -63,6 +64,7 @@ exports.submitAnswer = async (req, res) => {
   }
 };
 
+
 // POST /api/interview/:id/end
 exports.endInterview = async (req, res) => {
   try {
@@ -75,7 +77,21 @@ exports.endInterview = async (req, res) => {
     transcript.status = 'completed';
     await transcript.save();
 
-    res.status(200).json({ message: 'Interview completed', transcript });
+    const scoreData = await generateScorecard({
+      targetRole: transcript.targetRole,
+      messages: transcript.messages,
+    });
+
+    const scorecard = await Scorecard.create({
+      user: req.userId,
+      transcript: transcript._id,
+      scores: scoreData.scores,
+      overallFeedback: scoreData.overallFeedback,
+      strengths: scoreData.strengths,
+      areasToImprove: scoreData.areasToImprove,
+    });
+
+    res.status(200).json({ message: 'Interview completed', scorecard });
   } catch (err) {
     res.status(500).json({ message: 'Failed to end interview', error: err.message });
   }
