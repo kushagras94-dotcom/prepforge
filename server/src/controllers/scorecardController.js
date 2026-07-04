@@ -1,6 +1,6 @@
 const Scorecard = require('../models/Scorecard');
 const Transcript = require('../models/Transcript');
-const { generateScorecard } = require('../services/aiService');
+const { generateScorecard } = require('../orchestrator/interviewOrchestrator');
 
 // GET /api/scorecard/:transcriptId
 exports.getScorecard = async (req, res) => {

@@ -1,7 +1,6 @@
 const Transcript = require('../models/Transcript');
 const Scorecard = require('../models/Scorecard');
-const { getNextQuestion, generateScorecard } = require('../services/aiService');
-
+const { getNextQuestion, generateScorecard } = require('../orchestrator/interviewOrchestrator');
 // POST /api/interview/start
 exports.startInterview = async (req, res) => {
   try {
