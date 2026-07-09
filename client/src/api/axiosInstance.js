@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://studious-goggles-4j49g669rpjj2qj6q-5000.app.github.dev/api',
+  baseURL: 'https://prepforge-backend-xsje.onrender.com/api',
 });
 
 // Attach JWT token to every request automatically, if it exists
