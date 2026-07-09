@@ -1,4 +1,4 @@
-const { generate } = require('../services/geminiClient');
+const { generate } = require('../services/aiClient');
 
 // TEMPORARY: set to true to skip real Gemini calls while testing rate limiter
 const MOCK_MODE = false;

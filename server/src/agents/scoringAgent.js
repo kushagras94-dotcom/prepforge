@@ -1,5 +1,4 @@
-const { generate } = require('../services/geminiClient');
-
+const { generate } = require('../services/aiClient');
 const generateScorecard = async ({ targetRole, messages }) => {
   const transcriptText = messages
     .map((m) => `${m.role === 'interviewer' ? 'Interviewer' : 'Candidate'}: ${m.content}`)
