@@ -26,6 +26,10 @@ const transcriptSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    targetCompany: {
+      type: String,
+      default: null,
+    },
     status: {
       type: String,
       enum: ['in_progress', 'completed'],
