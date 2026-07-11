@@ -4,6 +4,7 @@ import api from '../api/axiosInstance';
 
 export default function Interview() {
   const [targetRole, setTargetRole] = useState('Software Engineer');
+  const [targetCompany, setTargetCompany] = useState('');
   const [transcriptId, setTranscriptId] = useState(null);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
@@ -15,7 +16,7 @@ export default function Interview() {
   const startInterview = async () => {
     setLoading(true);
     try {
-      const res = await api.post('/interview/start', { targetRole });
+      const res = await api.post('/interview/start', { targetRole, targetCompany: targetCompany || undefined  });
       setTranscriptId(res.data.transcriptId);
       setQuestion(res.data.question);
       setHistory([{ role: 'interviewer', content: res.data.question }]);
@@ -65,6 +66,14 @@ export default function Interview() {
             type="text"
             value={targetRole}
             onChange={(e) => setTargetRole(e.target.value)}
+            className="w-full border p-2 rounded mb-4"
+          />
+          <label className="block text-sm text-gray-600 mb-1">Target Company (optional)</label>
+          <input
+            type="text"
+            value={targetCompany}
+            onChange={(e) => setTargetCompany(e.target.value)}
+            placeholder="e.g. Google, TCS, Amazon"
             className="w-full border p-2 rounded mb-4"
           />
           <button
