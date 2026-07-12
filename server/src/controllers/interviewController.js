@@ -4,19 +4,21 @@ const { getNextQuestion, generateScorecard } = require('../orchestrator/intervie
 // POST /api/interview/start
 exports.startInterview = async (req, res) => {
   try {
-    const { targetRole, targetCompany } = req.body;
+    const { targetRole, targetCompany, difficulty } = req.body;
     const userId = req.userId;
 
     const transcript = await Transcript.create({
       user: userId,
       targetRole: targetRole || 'Software Engineer',
       targetCompany: targetCompany || null,
+      difficulty: difficulty || 'Medium',
       messages: [],
     });
 
     const question = await getNextQuestion({
       targetRole: transcript.targetRole,
       targetCompany: transcript.targetCompany,
+      difficulty: transcript.difficulty,
       messages: [],
     });
 
@@ -52,6 +54,7 @@ exports.submitAnswer = async (req, res) => {
     const nextQuestion = await getNextQuestion({
       targetRole: transcript.targetRole,
       targetCompany: transcript.targetCompany,
+      difficulty: transcript.difficulty,
       messages: transcript.messages,
     });
 

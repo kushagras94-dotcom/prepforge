@@ -5,6 +5,7 @@ import api from '../api/axiosInstance';
 export default function Interview() {
   const [targetRole, setTargetRole] = useState('Software Engineer');
   const [targetCompany, setTargetCompany] = useState('');
+  const [difficulty, setDifficulty] = useState('Medium');
   const [transcriptId, setTranscriptId] = useState(null);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
@@ -16,7 +17,7 @@ export default function Interview() {
   const startInterview = async () => {
     setLoading(true);
     try {
-      const res = await api.post('/interview/start', { targetRole, targetCompany: targetCompany || undefined  });
+      const res = await api.post('/interview/start', { targetRole, targetCompany: targetCompany || undefined , difficulty });
       setTranscriptId(res.data.transcriptId);
       setQuestion(res.data.question);
       setHistory([{ role: 'interviewer', content: res.data.question }]);
@@ -76,6 +77,16 @@ export default function Interview() {
             placeholder="e.g. Google, TCS, Amazon"
             className="w-full border p-2 rounded mb-4"
           />
+          <label className="block text-sm text-gray-600 mb-1">Difficulty</label>
+          <select
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value)}
+            className="w-full border p-2 rounded mb-4"
+          >
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
           <button
             onClick={startInterview}
             disabled={loading}

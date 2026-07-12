@@ -30,6 +30,11 @@ const transcriptSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    difficulty: {
+      type: String,
+      enum: ['Easy', 'Medium', 'Hard'],
+      default: 'Medium',
+    },
     status: {
       type: String,
       enum: ['in_progress', 'completed'],
