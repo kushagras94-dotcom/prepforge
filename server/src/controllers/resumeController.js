@@ -1,5 +1,4 @@
-const pdfParseModule = require('pdf-parse');
-const pdfParse = pdfParseModule.default || pdfParseModule;
+const {PDFParse} = require('pdf-parse');
 const Resume = require('../models/Resume');
 const { generate } = require('../services/aiClient');
 
@@ -22,8 +21,14 @@ exports.uploadResume = async (req, res) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    const parsed = await pdfParse(req.file.buffer);
-    const resumeText = parsed.text.slice(0, 8000);
+    const parser = new PDFParse({ data: req.file.buffer });
+    let resumeText;
+    try {
+      const result = await parser.getText();
+      resumeText = result.text.slice(0, 8000);
+    } finally {
+      await parser.destroy();
+    }
 
     const aiResponse = await generate(EXTRACTION_PROMPT(resumeText));
     let structured;
