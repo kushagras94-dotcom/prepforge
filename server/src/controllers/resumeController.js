@@ -1,4 +1,5 @@
-const pdfParse = require('pdf-parse');
+const pdfParseModule = require('pdf-parse');
+const pdfParse = pdfParseModule.default || pdfParseModule;
 const Resume = require('../models/Resume');
 const { generate } = require('../services/aiClient');
 
