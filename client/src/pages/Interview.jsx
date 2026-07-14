@@ -6,6 +6,7 @@ export default function Interview() {
   const [targetRole, setTargetRole] = useState('Software Engineer');
   const [targetCompany, setTargetCompany] = useState('');
   const [difficulty, setDifficulty] = useState('Medium');
+  const [useResume, setUseResume] = useState(false);
   const [transcriptId, setTranscriptId] = useState(null);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
@@ -17,7 +18,7 @@ export default function Interview() {
   const startInterview = async () => {
     setLoading(true);
     try {
-      const res = await api.post('/interview/start', { targetRole, targetCompany: targetCompany || undefined , difficulty });
+      const res = await api.post('/interview/start', { targetRole, targetCompany: targetCompany || undefined , difficulty, useResume });
       setTranscriptId(res.data.transcriptId);
       setQuestion(res.data.question);
       setHistory([{ role: 'interviewer', content: res.data.question }]);
@@ -87,6 +88,14 @@ export default function Interview() {
             <option value="Medium">Medium</option>
             <option value="Hard">Hard</option>
           </select>
+          <label className="flex items-center gap-2 mb-4 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={useResume}
+              onChange={(e) => setUseResume(e.target.checked)}
+            />
+            Tailor questions using my uploaded resume
+          </label>
           <button
             onClick={startInterview}
             disabled={loading}

@@ -1,17 +1,26 @@
 const Transcript = require('../models/Transcript');
 const Scorecard = require('../models/Scorecard');
 const { getNextQuestion, generateScorecard } = require('../orchestrator/interviewOrchestrator');
+const Resume = require('../models/Resume');
 // POST /api/interview/start
 exports.startInterview = async (req, res) => {
   try {
-    const { targetRole, targetCompany, difficulty } = req.body;
+    const { targetRole, targetCompany, difficulty, useResume } = req.body;
     const userId = req.userId;
+    let resumeContext = null;
+    if (useResume) {
+      const resume = await Resume.findOne({ user: userId });
+      if (resume) {
+        resumeContext = `Skills: ${resume.skills.join(', ')}. Experience: ${resume.experience.join('; ')}. Projects: ${resume.projects.join('; ')}.`;
+      }
+    }
 
     const transcript = await Transcript.create({
       user: userId,
       targetRole: targetRole || 'Software Engineer',
       targetCompany: targetCompany || null,
       difficulty: difficulty || 'Medium',
+      resumeContext,
       messages: [],
     });
 
@@ -19,6 +28,7 @@ exports.startInterview = async (req, res) => {
       targetRole: transcript.targetRole,
       targetCompany: transcript.targetCompany,
       difficulty: transcript.difficulty,
+      resumeContext: transcript.resumeContext,
       messages: [],
     });
 
@@ -55,6 +65,7 @@ exports.submitAnswer = async (req, res) => {
       targetRole: transcript.targetRole,
       targetCompany: transcript.targetCompany,
       difficulty: transcript.difficulty,
+      resumeContext: transcript.resumeContext,
       messages: transcript.messages,
     });
 

@@ -5,7 +5,7 @@ const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const interviewRoutes = require('./src/routes/interviewRoutes');
 const scorecardRoutes = require('./src/routes/scorecardRoutes');
-
+const resumeRoutes = require('./src/routes/resumeRoutes');
 
 connectDB();
 
@@ -25,6 +25,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/interview', interviewRoutes);
 // ...
 app.use('/api/scorecard', scorecardRoutes);
+app.use('/api/resume', resumeRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

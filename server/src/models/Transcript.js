@@ -35,6 +35,10 @@ const transcriptSchema = new mongoose.Schema(
       enum: ['Easy', 'Medium', 'Hard'],
       default: 'Medium',
     },
+    resumeContext: {
+      type: String,
+      default: null,
+    },
     status: {
       type: String,
       enum: ['in_progress', 'completed'],
