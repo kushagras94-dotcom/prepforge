@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://prepforge-backend-xsje.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://prepforge-backend-xsje.onrender.com/api',
 });
 
 // Attach JWT token to every request automatically, if it exists

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
 
@@ -9,11 +10,15 @@ export default function Dashboard() {
       <nav className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
         <h1 className="text-xl font-bold text-blue-600">PrepForge</h1>
         <div className="flex items-center gap-4">
+          <Link to="/history" className="text-gray-600 hover:text-blue-600 text-sm">
+            History
+          </Link>
           <span className="text-gray-600">Hi, {user?.name}</span>
           <button onClick={logout} className="text-red-500 hover:underline text-sm">
             Logout
           </button>
         </div>
+        
       </nav>
 
       <div className="max-w-4xl mx-auto p-6">

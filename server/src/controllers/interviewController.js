@@ -112,3 +112,15 @@ exports.endInterview = async (req, res) => {
     res.status(500).json({ message: 'Failed to end interview', error: err.message });
   }
 };
+// GET /api/interview/history
+exports.getHistory = async (req, res) => {
+  try {
+    const transcripts = await Transcript.find({ user: req.userId })
+      .sort({ createdAt: -1 })
+      .select('targetRole targetCompany difficulty status createdAt');
+
+    res.status(200).json({ transcripts });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch history', error: err.message });
+  }
+};

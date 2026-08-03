@@ -6,9 +6,11 @@ const {
   startInterview,
   submitAnswer,
   endInterview,
+  getHistory,
 } = require('../controllers/interviewController');
 
 router.post('/start', protect, rateLimiter, startInterview);
+router.get('/history', protect, getHistory);
 router.post('/:id/answer', protect, rateLimiter, submitAnswer);
 router.post('/:id/end', protect, rateLimiter, endInterview);
 

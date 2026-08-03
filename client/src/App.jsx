@@ -6,6 +6,7 @@ import Interview from './pages/Interview';
 import Scorecard from './pages/Scorecard';
 import { useAuth } from './context/AuthContext';
 import Resume from './pages/Resume';
+import History from './pages/History';
 
 function App() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ function App() {
       <Route path="/interview" element={user ? <Interview /> : <Navigate to="/login" />} />
       <Route path="/scorecard/:transcriptId" element={user ? <Scorecard /> : <Navigate to="/login" />} />
       <Route path="/" element={<Navigate to={user ? '/dashboard' : '/login'} />} />
+      <Route path="/history" element={user ? <History /> : <Navigate to="/login" />} />
     </Routes>
   );
 }
