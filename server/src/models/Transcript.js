@@ -11,6 +11,21 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    speechMetrics: {
+      type: new mongoose.Schema(
+        {
+          wordCount: Number,
+          durationSeconds: Number,
+          wpm: Number,
+          fillerWordCount: Number,
+          pauseCount: Number,
+          totalPauseSeconds: Number,
+          longestPauseSeconds: Number,
+        },
+        { _id: false }
+      ),
+      default: undefined,
+    },
   },
   { timestamps: true }
 );

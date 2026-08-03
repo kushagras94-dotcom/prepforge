@@ -1,3 +1,5 @@
+const { transcribe } = require('../services/aiClient');
+const { computeSpeechMetrics } = require('../utils/speechMetrics');
 const Transcript = require('../models/Transcript');
 const Scorecard = require('../models/Scorecard');
 const { getNextQuestion, generateScorecard } = require('../orchestrator/interviewOrchestrator');
@@ -81,6 +83,7 @@ exports.submitAnswer = async (req, res) => {
 };
 
 
+
 // POST /api/interview/:id/end
 exports.endInterview = async (req, res) => {
   try {
@@ -93,9 +96,46 @@ exports.endInterview = async (req, res) => {
     transcript.status = 'completed';
     await transcript.save();
 
+    const answersWithMetrics = transcript.messages.filter(
+      (m) => m.role === 'candidate' && m.speechMetrics
+    );
+
+    let communicationMetrics = null;
+    let speechSummary = null;
+
+    if (answersWithMetrics.length > 0) {
+      const n = answersWithMetrics.length;
+      const avgWpm = Math.round(
+        answersWithMetrics.reduce((sum, m) => sum + m.speechMetrics.wpm, 0) / n
+      );
+      const totalFillerWords = answersWithMetrics.reduce(
+        (sum, m) => sum + m.speechMetrics.fillerWordCount,
+        0
+      );
+      const avgFillerWordsPerAnswer = Math.round((totalFillerWords / n) * 10) / 10;
+      const totalPauses = answersWithMetrics.reduce(
+        (sum, m) => sum + m.speechMetrics.pauseCount,
+        0
+      );
+      const avgPauseSeconds =
+        Math.round(
+          (answersWithMetrics.reduce((sum, m) => sum + m.speechMetrics.totalPauseSeconds, 0) / n) * 10
+        ) / 10;
+
+      communicationMetrics = {
+        avgWpm,
+        totalFillerWords,
+        avgFillerWordsPerAnswer,
+        totalPauses,
+        avgPauseSeconds,
+      };
+      speechSummary = `Average speaking pace ${avgWpm} WPM, ${avgFillerWordsPerAnswer} filler words per answer on average, ${totalPauses} long pauses (>1.2s) across the interview.`;
+    }
+
     const scoreData = await generateScorecard({
       targetRole: transcript.targetRole,
       messages: transcript.messages,
+      speechSummary,
     });
 
     const scorecard = await Scorecard.create({
@@ -105,6 +145,7 @@ exports.endInterview = async (req, res) => {
       overallFeedback: scoreData.overallFeedback,
       strengths: scoreData.strengths,
       areasToImprove: scoreData.areasToImprove,
+      communicationMetrics,
     });
 
     res.status(200).json({ message: 'Interview completed', scorecard });
@@ -122,5 +163,49 @@ exports.getHistory = async (req, res) => {
     res.status(200).json({ transcripts });
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch history', error: err.message });
+  }
+};
+// POST /api/interview/:id/answer-voice
+exports.submitVoiceAnswer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!req.file) {
+      return res.status(400).json({ message: 'No audio file uploaded' });
+    }
+
+    const transcript = await Transcript.findOne({ _id: id, user: req.userId });
+    if (!transcript) {
+      return res.status(404).json({ message: 'Interview not found' });
+    }
+
+    const result = await transcribe(req.file.buffer, req.file.originalname);
+    const answerText = (result.text || '').trim();
+    const words = result.words || [];
+    const speechMetrics = computeSpeechMetrics(words);
+
+    if (!answerText) {
+      return res.status(400).json({ message: 'Could not detect any speech in the recording' });
+    }
+
+    transcript.messages.push({ role: 'candidate', content: answerText, speechMetrics });
+
+    const nextQuestion = await getNextQuestion({
+      targetRole: transcript.targetRole,
+      targetCompany: transcript.targetCompany,
+      difficulty: transcript.difficulty,
+      resumeContext: transcript.resumeContext,
+      messages: transcript.messages,
+    });
+
+    transcript.messages.push({ role: 'interviewer', content: nextQuestion });
+    await transcript.save();
+
+    res.status(200).json({
+      question: nextQuestion,
+      transcribedText: answerText,
+      speechMetrics,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to process voice answer', error: err.message });
   }
 };

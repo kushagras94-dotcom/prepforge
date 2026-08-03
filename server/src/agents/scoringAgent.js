@@ -1,9 +1,13 @@
 const { generate } = require('../services/aiClient');
-const generateScorecard = async ({ targetRole, messages }) => {
+const generateScorecard = async ({ targetRole, messages,speechSummay }) => {
   const transcriptText = messages
     .map((m) => `${m.role === 'interviewer' ? 'Interviewer' : 'Candidate'}: ${m.content}`)
     .join('\n');
-
+  
+  const speechContext = speechSummary
+    ? `\n\nSpeech delivery data (measured from voice recordings): ${speechSummary}\nFactor this into the communication score where relevant.`
+    : '';
+    
   const prompt = `You are an expert technical interviewer evaluating a mock interview transcript for a ${targetRole} position.
 
 Transcript:

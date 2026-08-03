@@ -25,6 +25,19 @@ const scorecardSchema = new mongoose.Schema(
     },
     strengths: [String],
     areasToImprove: [String],
+    communicationMetrics: {
+      type: new mongoose.Schema(
+        {
+          avgWpm: Number,
+          totalFillerWords: Number,
+          avgFillerWordsPerAnswer: Number,
+          totalPauses: Number,
+          avgPauseSeconds: Number,
+        },
+        { _id: false }
+      ),
+      default: undefined,
+    },
   },
   { timestamps: true }
 );
