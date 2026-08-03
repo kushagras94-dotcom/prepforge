@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 
@@ -13,7 +13,20 @@ export default function Interview() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [processingVoice, setProcessingVoice] = useState(false);
   const navigate = useNavigate();
+
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+  const speak = (text) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    window.speechSynthesis.speak(utterance);
+  };
 
   const startInterview = async () => {
     setLoading(true);
@@ -23,6 +36,7 @@ export default function Interview() {
       setQuestion(res.data.question);
       setHistory([{ role: 'interviewer', content: res.data.question }]);
       setStarted(true);
+      speak(res.data.question);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to start interview');
     }
@@ -41,12 +55,65 @@ export default function Interview() {
       ]);
       setQuestion(res.data.question);
       setAnswer('');
+      speak(res.data.question);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to submit answer');
     }
     setLoading(false);
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await uploadVoiceAnswer(audioBlob);
+      };
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setRecording(true);
+    } catch (err) {
+      alert('Microphone access is required for voice answers. Please allow mic permission.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
+  };
+
+  const uploadVoiceAnswer = async (audioBlob) => {
+    setProcessingVoice(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'answer.webm');
+
+      const res = await api.post(`/interview/${transcriptId}/answer-voice`, formData);
+      const { question: nextQuestion, transcribedText, speechMetrics } = res.data;
+
+      setHistory((prev) => [
+        ...prev,
+        { role: 'candidate', content: transcribedText, speechMetrics },
+        { role: 'interviewer', content: nextQuestion },
+      ]);
+      setQuestion(nextQuestion);
+      speak(nextQuestion);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to process voice answer');
+    }
+    setProcessingVoice(false);
+  };
   const endInterview = async () => {
     setLoading(true);
     try {
@@ -123,24 +190,49 @@ export default function Interview() {
               >
                 {msg.content}
               </span>
+              {msg.speechMetrics && (
+                <div className="text-xs text-gray-400 mt-1">
+                  {msg.speechMetrics.wpm} WPM · {msg.speechMetrics.fillerWordCount} filler words ·{' '}
+                  {msg.speechMetrics.pauseCount} long pauses
+                </div>
+              )}
             </div>
           ))}
         </div>
 
+<div className="bg-white rounded-xl shadow-md p-4 mb-3">
+          <div className="flex items-center gap-3 mb-3">
+            <button
+              onClick={recording ? stopRecording : startRecording}
+              disabled={loading || processingVoice}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
+                recording
+                  ? 'bg-red-500 text-white hover:bg-red-600'
+                  : 'bg-gray-800 text-white hover:bg-gray-900'
+              } disabled:opacity-50`}
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${recording ? 'bg-white animate-pulse' : 'bg-red-500'}`} />
+              {recording ? 'Stop Recording' : '🎤 Record Answer'}
+            </button>
+            {processingVoice && <span className="text-sm text-gray-500">Transcribing your answer...</span>}
+          </div>
+
+          <p className="text-xs text-gray-400 mb-2">Or type your answer instead:</p>
         <textarea
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           placeholder="Type your answer..."
           className="w-full border p-3 rounded-lg mb-3 h-28"
         />
+        </div>
 
         <div className="flex gap-3">
           <button
             onClick={submitAnswer}
-            disabled={loading}
+            disabled={loading || recording || processingVoice}
             className="flex-1 bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Thinking...' : 'Submit Answer'}
+            {loading ? 'Thinking...' : 'Submit Typed Answer'}
           </button>
           <button
             onClick={endInterview}

@@ -35,7 +35,7 @@ export default function Scorecard() {
     );
   }
 
-  const { scores, overallFeedback, strengths, areasToImprove } = scorecard;
+  const { scores, overallFeedback, strengths, areasToImprove, communicationMetrics  } = scorecard;
 
   const ScoreBar = ({ label, value }) => (
     <div className="mb-4">
@@ -61,6 +61,18 @@ export default function Scorecard() {
         <ScoreBar label="Technical Accuracy" value={scores.technicalAccuracy} />
         <ScoreBar label="Problem Solving" value={scores.problemSolving} />
         <ScoreBar label="Confidence" value={scores.confidence} />
+
+        {communicationMetrics && (
+          <div className="mt-6 bg-gray-50 rounded-lg p-4">
+            <h2 className="font-bold text-sm text-gray-600 mb-2">Speaking Analysis</h2>
+            <div className="grid grid-cols-2 gap-3 text-sm text-gray-700">
+              <div>Avg. Pace: <span className="font-semibold">{communicationMetrics.avgWpm} WPM</span></div>
+              <div>Filler Words: <span className="font-semibold">{communicationMetrics.avgFillerWordsPerAnswer}/answer</span></div>
+              <div>Long Pauses: <span className="font-semibold">{communicationMetrics.totalPauses}</span></div>
+              <div>Avg. Pause Time: <span className="font-semibold">{communicationMetrics.avgPauseSeconds}s</span></div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-6">
           <h2 className="font-bold text-lg mb-2">Overall Feedback</h2>
