@@ -1,5 +1,5 @@
 const { generate } = require('../services/aiClient');
-const generateScorecard = async ({ targetRole, messages,speechSummay }) => {
+const generateScorecard = async ({ targetRole, messages,speechSummary }) => {
   const transcriptText = messages
     .map((m) => `${m.role === 'interviewer' ? 'Interviewer' : 'Candidate'}: ${m.content}`)
     .join('\n');
@@ -11,7 +11,7 @@ const generateScorecard = async ({ targetRole, messages,speechSummay }) => {
   const prompt = `You are an expert technical interviewer evaluating a mock interview transcript for a ${targetRole} position.
 
 Transcript:
-${transcriptText}
+${transcriptText}${speechContext}
 
 Evaluate the candidate on these four dimensions, each scored 0-10:
 - communication: clarity, structure, and articulation of answers

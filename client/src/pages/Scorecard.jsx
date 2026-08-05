@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axiosInstance';
+import { jsPDF } from 'jspdf';
 
 export default function Scorecard() {
   const { transcriptId } = useParams();
@@ -51,6 +52,81 @@ export default function Scorecard() {
       </div>
     </div>
   );
+
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    let y = 20;
+
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.text('Interview Scorecard', 20, y);
+    y += 12;
+
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+
+    const scoreLines = [
+      `Communication: ${scores.communication}/10`,
+      `Technical Accuracy: ${scores.technicalAccuracy}/10`,
+      `Problem Solving: ${scores.problemSolving}/10`,
+      `Confidence: ${scores.confidence}/10`,
+    ];
+    doc.setFont(undefined, 'bold');
+    doc.text('Scores', 20, y);
+    y += 7;
+    doc.setFont(undefined, 'normal');
+    scoreLines.forEach((line) => {
+      doc.text(line, 20, y);
+      y += 6;
+    });
+    y += 4;
+
+    if (communicationMetrics) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Speaking Analysis', 20, y);
+      y += 7;
+      doc.setFont(undefined, 'normal');
+      doc.text(`Average Pace: ${communicationMetrics.avgWpm} WPM`, 20, y);
+      y += 6;
+      doc.text(`Filler Words: ${communicationMetrics.avgFillerWordsPerAnswer} per answer`, 20, y);
+      y += 6;
+      doc.text(`Long Pauses: ${communicationMetrics.totalPauses}`, 20, y);
+      y += 6;
+      doc.text(`Avg. Pause Time: ${communicationMetrics.avgPauseSeconds}s`, 20, y);
+      y += 10;
+    }
+
+    doc.setFont(undefined, 'bold');
+    doc.text('Overall Feedback', 20, y);
+    y += 7;
+    doc.setFont(undefined, 'normal');
+    const feedbackLines = doc.splitTextToSize(overallFeedback, 170);
+    doc.text(feedbackLines, 20, y);
+    y += feedbackLines.length * 6 + 6;
+
+    doc.setFont(undefined, 'bold');
+    doc.text('Strengths', 20, y);
+    y += 7;
+    doc.setFont(undefined, 'normal');
+    strengths.forEach((s) => {
+      const lines = doc.splitTextToSize(`- ${s}`, 170);
+      doc.text(lines, 20, y);
+      y += lines.length * 6;
+    });
+    y += 6;
+
+    doc.setFont(undefined, 'bold');
+    doc.text('Areas to Improve', 20, y);
+    y += 7;
+    doc.setFont(undefined, 'normal');
+    areasToImprove.forEach((a) => {
+      const lines = doc.splitTextToSize(`- ${a}`, 170);
+      doc.text(lines, 20, y);
+      y += lines.length * 6;
+    });
+
+    doc.save('PrepForge_Scorecard.pdf');
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -103,6 +179,12 @@ export default function Scorecard() {
         >
           Back to Dashboard
         </Link>
+        <button
+          onClick={downloadPDF}
+          className="w-full mt-8 bg-gray-800 text-white p-2 rounded hover:bg-gray-900"
+        >
+          Download PDF
+        </button>
       </div>
     </div>
   );
