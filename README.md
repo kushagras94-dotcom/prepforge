@@ -15,7 +15,7 @@ PrepForge simulates a real interviewer: it asks an opening question based on you
 - **Database:** MongoDB Atlas (Mongoose ODM)
 - **Cache / Rate Limiting:** Redis (Upstash)
 - **Auth:** JWT (JSON Web Tokens) + bcrypt for password hashing
-- **AI Engine:** Groq API (`llama-3.3-70b-versatile`)
+- **AI Engine:** Groq API (`openai/gpt-oss-120b`)
 
 ## Features
 

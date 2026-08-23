@@ -10,13 +10,14 @@ const generate = async (prompt, retries = 3) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [{ role: 'user', content: prompt }],
       });
       return completion.choices[0].message.content.trim();
     } catch (err) {
       if (attempt < retries) {
         const waitTime = attempt * 1000;
+        console.error(err.response?.data || err.message || err);
         console.log(`Groq call failed (attempt ${attempt}), retrying in ${waitTime}ms...`);
         await sleep(waitTime);
         continue;
