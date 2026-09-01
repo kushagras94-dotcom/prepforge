@@ -1,9 +1,9 @@
 const {PDFParse} = require('pdf-parse');
 const Resume = require('../models/Resume');
-const ResumeChunk = require('../models/ResumeChunk');
+//const ResumeChunk = require('../models/ResumeChunk');
 const { generate } = require('../services/aiClient');
-const { chunkResume } = require('../services/chunking');
-const { embedText } = require('../services/embeddingService');
+// const { chunkResume } = require('../services/chunking');
+// const { embedText } = require('../services/embeddingService');
 
 const EXTRACTION_PROMPT = (resumeText) => `You are analyzing a candidate's resume. Extract the following as JSON only — no markdown, no code fences, no extra text:
 {
@@ -56,21 +56,21 @@ exports.uploadResume = async (req, res) => {
     );
 
     // RAG ingestion: replace old chunks for this resume, embed and save new ones
-    await ResumeChunk.deleteMany({ resumeId: resume._id });
+    // await ResumeChunk.deleteMany({ resumeId: resume._id });
 
-    const rawChunks = chunkResume(resume);
-    const embeddedChunks = await Promise.all(
-      rawChunks.map(async (chunk) => ({
-        ...chunk,
-        resumeId: resume._id,
-        user: req.userId,
-        embedding: await embedText(chunk.chunkText),
-      }))
-    );
+    // const rawChunks = chunkResume(resume);
+    // const embeddedChunks = await Promise.all(
+    //   rawChunks.map(async (chunk) => ({
+    //     ...chunk,
+    //     resumeId: resume._id,
+    //     user: req.userId,
+    //     embedding: await embedText(chunk.chunkText),
+    //   }))
+    // );
 
-    if (embeddedChunks.length > 0) {
-      await ResumeChunk.insertMany(embeddedChunks);
-    }
+    // if (embeddedChunks.length > 0) {
+    //   await ResumeChunk.insertMany(embeddedChunks);
+    // }
 
     res.status(200).json({ resume });
   } catch (err) {
