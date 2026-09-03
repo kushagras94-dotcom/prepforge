@@ -4,16 +4,27 @@ const Transcript = require('../models/Transcript');
 const Scorecard = require('../models/Scorecard');
 const { getNextQuestion, generateScorecard } = require('../orchestrator/interviewOrchestrator');
 const Resume = require('../models/Resume');
+const axios = require('axios');
 // POST /api/interview/start
 exports.startInterview = async (req, res) => {
   try {
     const { targetRole, targetCompany, difficulty, useResume } = req.body;
     const userId = req.userId;
-    let resumeContext = null;
+        let resumeContext = null;
     if (useResume) {
       const resume = await Resume.findOne({ user: userId });
       if (resume) {
-        resumeContext = `Skills: ${resume.skills.join(', ')}. Experience: ${resume.experience.join('; ')}. Projects: ${resume.projects.join('; ')}.`;
+        try {
+          const { data } = await axios.post('http://localhost:8000/retrieve', {
+            resumeId: resume._id.toString(),
+            query: `${targetCompany || ''} ${targetRole || ''} interview question context`.trim(),
+            k: 3,
+          });
+          resumeContext = data.chunks.join('\n');
+        } catch (ragErr) {
+          console.error('RAG retrieval failed, falling back to full resume text:', ragErr.message);
+          resumeContext = `Skills: ${resume.skills.join(', ')}. Experience: ${resume.experience.join('; ')}. Projects: ${resume.projects.join('; ')}.`;
+        }
       }
     }
 

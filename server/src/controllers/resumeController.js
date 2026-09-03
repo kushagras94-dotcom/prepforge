@@ -55,22 +55,19 @@ exports.uploadResume = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    // RAG ingestion: replace old chunks for this resume, embed and save new ones
-    // await ResumeChunk.deleteMany({ resumeId: resume._id });
 
-    // const rawChunks = chunkResume(resume);
-    // const embeddedChunks = await Promise.all(
-    //   rawChunks.map(async (chunk) => ({
-    //     ...chunk,
-    //     resumeId: resume._id,
-    //     user: req.userId,
-    //     embedding: await embedText(chunk.chunkText),
-    //   }))
-    // );
+    const axios = require('axios');
+    // after resume is saved:
+    await axios.post('http://localhost:8000/ingest', {
+      resumeId: resume._id.toString(),
+      user: req.userId.toString(),
+      skills: resume.skills,
+      experience: resume.experience,
+      projects: resume.projects,
+      summary: resume.summary,
+    });
 
-    // if (embeddedChunks.length > 0) {
-    //   await ResumeChunk.insertMany(embeddedChunks);
-    // }
+    
 
     res.status(200).json({ resume });
   } catch (err) {
