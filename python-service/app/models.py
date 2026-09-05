@@ -12,3 +12,10 @@ class RetrieveRequest(BaseModel):
     resumeId: str
     query: str
     k: int = 3
+
+class OpeningQuestionRequest(BaseModel):
+    role: str
+    company: str = ""
+    difficulty: str = "Medium"
+    resumeId: str
+    userId: str

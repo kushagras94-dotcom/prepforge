@@ -11,9 +11,10 @@ exports.startInterview = async (req, res) => {
   try {
     const { targetRole, targetCompany, difficulty, useResume } = req.body;
     const userId = req.userId;
-        let resumeContext = null;
+    let resumeContext = null;
+    let resume = null;
     if (useResume) {
-      const resume = await Resume.findOne({ user: userId });
+      resume = await Resume.findOne({ user: userId });
       if (resume) {
         try {
           const { data } = await axios.post('http://localhost:8000/retrieve', {
@@ -38,13 +39,36 @@ exports.startInterview = async (req, res) => {
       messages: [],
     });
 
-    const question = await getNextQuestion({
-      targetRole: transcript.targetRole,
-      targetCompany: transcript.targetCompany,
-      difficulty: transcript.difficulty,
-      resumeContext: transcript.resumeContext,
-      messages: [],
-    });
+    let question;
+    if (resume) {
+      try {
+        const { data } = await axios.post('http://localhost:8000/agent/start-question', {
+          role: transcript.targetRole,
+          company: transcript.targetCompany || '',
+          difficulty: transcript.difficulty,
+          resumeId: resume._id.toString(),
+          userId: userId.toString(),
+        });
+        question = data.question;
+      } catch (agentErr) {
+        console.error('Agent opening question failed, falling back to questionAgent:', agentErr.message);
+        question = await getNextQuestion({
+          targetRole: transcript.targetRole,
+          targetCompany: transcript.targetCompany,
+          difficulty: transcript.difficulty,
+          resumeContext: transcript.resumeContext,
+          messages: [],
+        });
+      }
+    } else {
+      question = await getNextQuestion({
+        targetRole: transcript.targetRole,
+        targetCompany: transcript.targetCompany,
+        difficulty: transcript.difficulty,
+        resumeContext: transcript.resumeContext,
+        messages: [],
+      });
+    }
 
     transcript.messages.push({ role: 'interviewer', content: question });
     await transcript.save();
