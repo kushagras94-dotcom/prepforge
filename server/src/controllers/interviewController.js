@@ -5,6 +5,7 @@ const Scorecard = require('../models/Scorecard');
 const { getNextQuestion, generateScorecard } = require('../orchestrator/interviewOrchestrator');
 const Resume = require('../models/Resume');
 const axios = require('axios');
+const { updateMemory } = require('../services/memoryAgent');
 // POST /api/interview/start
 exports.startInterview = async (req, res) => {
   try {
@@ -20,7 +21,7 @@ exports.startInterview = async (req, res) => {
             query: `${targetCompany || ''} ${targetRole || ''} interview question context`.trim(),
             k: 3,
           });
-          resumeContext = data.chunks.join('\n');
+          resumeContext = data.context;
         } catch (ragErr) {
           console.error('RAG retrieval failed, falling back to full resume text:', ragErr.message);
           resumeContext = `Skills: ${resume.skills.join(', ')}. Experience: ${resume.experience.join('; ')}. Projects: ${resume.projects.join('; ')}.`;
@@ -74,12 +75,21 @@ exports.submitAnswer = async (req, res) => {
 
     transcript.messages.push({ role: 'candidate', content: answer });
 
+
+    const lastQuestion = transcript.messages[transcript.messages.length - 2]?.content || '';
+    transcript.memory = await updateMemory({
+      existingMemory: transcript.memory,
+      question: lastQuestion,
+      answer,
+    });
+
     const nextQuestion = await getNextQuestion({
       targetRole: transcript.targetRole,
       targetCompany: transcript.targetCompany,
       difficulty: transcript.difficulty,
       resumeContext: transcript.resumeContext,
-      messages: transcript.messages,
+      memory: transcript.memory,
+      messages: transcript.messages.slice(-6),
     });
 
     transcript.messages.push({ role: 'interviewer', content: nextQuestion });
@@ -199,13 +209,21 @@ exports.submitVoiceAnswer = async (req, res) => {
     }
 
     transcript.messages.push({ role: 'candidate', content: answerText, speechMetrics });
+    
+    const lastQuestion = transcript.messages[transcript.messages.length - 2]?.content || '';
+    transcript.memory = await updateMemory({
+      existingMemory: transcript.memory,
+      question: lastQuestion,
+      answer: answerText,
+    });
 
     const nextQuestion = await getNextQuestion({
       targetRole: transcript.targetRole,
       targetCompany: transcript.targetCompany,
       difficulty: transcript.difficulty,
       resumeContext: transcript.resumeContext,
-      messages: transcript.messages,
+      memory: transcript.memory,
+      messages: transcript.messages.slice(-6),
     });
 
     transcript.messages.push({ role: 'interviewer', content: nextQuestion });

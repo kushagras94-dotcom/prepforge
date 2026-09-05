@@ -59,6 +59,11 @@ const transcriptSchema = new mongoose.Schema(
       enum: ['in_progress', 'completed'],
       default: 'in_progress',
     },
+    memory: {
+      topicsDiscussed: { type: [String], default: [] },
+      weakAreas: { type: [String], default: [] },
+      strongAreas: { type: [String], default: [] },
+    },
     messages: [messageSchema],
   },
   { timestamps: true }
