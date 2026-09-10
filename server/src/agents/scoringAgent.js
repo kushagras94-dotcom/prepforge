@@ -1,40 +1,63 @@
 const { generate } = require('../services/aiClient');
-const generateScorecard = async ({ targetRole, messages,speechSummary }) => {
+const { evaluateCommunication } = require('./evaluators/communicationEvaluator');
+const { evaluateTechnical } = require('./evaluators/technicalEvaluator');
+const { evaluateProblemSolving } = require('./evaluators/problemSolvingEvaluator');
+const { evaluateConfidence } = require('./evaluators/confidenceEvaluator');
+
+function mergeUnique(arrays, max = 5) {
+  const set = new Set();
+  for (const arr of arrays) for (const item of arr) set.add(item);
+  return Array.from(set).slice(0, max);
+}
+
+const generateScorecard = async ({ targetRole, messages, speechSummary }) => {
   const transcriptText = messages
     .map((m) => `${m.role === 'interviewer' ? 'Interviewer' : 'Candidate'}: ${m.content}`)
     .join('\n');
-  
+
   const speechContext = speechSummary
     ? `\n\nSpeech delivery data (measured from voice recordings): ${speechSummary}\nFactor this into the communication score where relevant.`
     : '';
-    
-  const prompt = `You are an expert technical interviewer evaluating a mock interview transcript for a ${targetRole} position.
 
-Transcript:
-${transcriptText}${speechContext}
+  const [communication, technical, problemSolving, confidence] = await Promise.all([
+    evaluateCommunication({ transcriptText, speechContext }),
+    evaluateTechnical({ targetRole, transcriptText }),
+    evaluateProblemSolving({ transcriptText }),
+    evaluateConfidence({ transcriptText }),
+  ]);
 
-Evaluate the candidate on these four dimensions, each scored 0-10:
-- communication: clarity, structure, and articulation of answers
-- technicalAccuracy: correctness and depth of technical knowledge shown
-- problemSolving: approach to breaking down and solving problems
-- confidence: decisiveness and composure in answers (inferred from wording, not tone of voice)
+  const scores = {
+    communication: communication.score,
+    technicalAccuracy: technical.score,
+    problemSolving: problemSolving.score,
+    confidence: confidence.score,
+  };
 
-Respond with ONLY valid JSON in exactly this format, no markdown, no extra text:
-{
-  "scores": {
-    "communication": <number>,
-    "technicalAccuracy": <number>,
-    "problemSolving": <number>,
-    "confidence": <number>
-  },
-  "overallFeedback": "<2-3 sentence summary>",
-  "strengths": ["<point1>", "<point2>"],
-  "areasToImprove": ["<point1>", "<point2>"]
-}`;
+  const strengths = mergeUnique([
+    communication.strengths,
+    technical.strengths,
+    problemSolving.strengths,
+    confidence.strengths,
+  ]);
 
-  let text = await generate(prompt);
-  text = text.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
-  return JSON.parse(text);
+  const areasToImprove = mergeUnique([
+    communication.areasToImprove,
+    technical.areasToImprove,
+    problemSolving.areasToImprove,
+    confidence.areasToImprove,
+  ]);
+
+  const synthesisPrompt = `You are aggregating four specialist evaluations of a mock interview for a ${targetRole} position into one final summary.
+
+Scores: communication ${scores.communication}/10, technicalAccuracy ${scores.technicalAccuracy}/10, problemSolving ${scores.problemSolving}/10, confidence ${scores.confidence}/10.
+Strengths noted: ${strengths.join('; ')}
+Areas to improve noted: ${areasToImprove.join('; ')}
+
+Write a 2-3 sentence overall feedback summary synthesizing these into one coherent assessment. Respond with ONLY the summary text, no labels, no JSON.`;
+
+  const overallFeedback = (await generate(synthesisPrompt)).trim();
+
+  return { scores, overallFeedback, strengths, areasToImprove };
 };
 
 module.exports = { generateScorecard };
