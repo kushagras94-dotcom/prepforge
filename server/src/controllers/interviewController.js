@@ -6,6 +6,7 @@ const { getNextQuestion, generateScorecard } = require('../orchestrator/intervie
 const Resume = require('../models/Resume');
 const axios = require('axios');
 const { updateMemory } = require('../services/memoryAgent');
+const { adjustDifficulty } = require('../utils/adaptiveDifficulty');
 // POST /api/interview/start
 exports.startInterview = async (req, res) => {
   try {
@@ -101,11 +102,13 @@ exports.submitAnswer = async (req, res) => {
 
 
     const lastQuestion = transcript.messages[transcript.messages.length - 2]?.content || '';
-    transcript.memory = await updateMemory({
+    const memoryResult = await updateMemory({
       existingMemory: transcript.memory,
       question: lastQuestion,
       answer,
     });
+    transcript.memory = memoryResult.memory;
+    adjustDifficulty(transcript, memoryResult.performance);
 
     const nextQuestion = await getNextQuestion({
       targetRole: transcript.targetRole,
@@ -235,11 +238,13 @@ exports.submitVoiceAnswer = async (req, res) => {
     transcript.messages.push({ role: 'candidate', content: answerText, speechMetrics });
     
     const lastQuestion = transcript.messages[transcript.messages.length - 2]?.content || '';
-    transcript.memory = await updateMemory({
+    const memoryResult = await updateMemory({
       existingMemory: transcript.memory,
       question: lastQuestion,
       answer: answerText,
     });
+    transcript.memory = memoryResult.memory;
+    adjustDifficulty(transcript, memoryResult.performance);
 
     const nextQuestion = await getNextQuestion({
       targetRole: transcript.targetRole,

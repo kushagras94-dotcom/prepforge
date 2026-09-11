@@ -19,9 +19,8 @@ const rateLimiter = async (req, res, next) => {
       tokens = BUCKET_CAPACITY;
       lastRefill = now;
     } else {
-      const parsed = JSON.parse(bucketData);
-      tokens = parsed.tokens;
-      lastRefill = parsed.lastRefill;
+      tokens = bucketData.tokens;
+      lastRefill = bucketData.lastRefill;
 
       // Calculate how many tokens to add based on elapsed time
       const elapsedMs = now - lastRefill;
@@ -40,8 +39,11 @@ const rateLimiter = async (req, res, next) => {
     // Consume one token for this request
     tokens -= 1;
 
-    await redis.set(key, JSON.stringify({ tokens, lastRefill }), 'EX', 60); // expires after 60s of inactivity
-
+    await redis.set(
+      key,
+      { tokens, lastRefill },
+      { ex: 60 }
+    );
     next();
   } catch (err) {
     console.error('Rate limiter error:', err.message);

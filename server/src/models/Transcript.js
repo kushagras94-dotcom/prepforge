@@ -64,6 +64,10 @@ const transcriptSchema = new mongoose.Schema(
       weakAreas: { type: [String], default: [] },
       strongAreas: { type: [String], default: [] },
     },
+    performanceStreak: {
+      struggles: { type: Number, default: 0 },
+      excels: { type: Number, default: 0 },
+    },
     messages: [messageSchema],
   },
   { timestamps: true }

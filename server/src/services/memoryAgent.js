@@ -12,9 +12,10 @@ const EXTRACTION_PROMPT = (question, answer) => `You are tracking a candidate's 
 {
   "topicsDiscussed": ["short topic labels covered in this exchange"],
   "weakAreas": ["topics the candidate struggled with or gave a vague/incomplete answer on, if any"],
-  "strongAreas": ["topics the candidate answered confidently and in depth, if any"]
+  "strongAreas": ["topics the candidate answered confidently and in depth, if any"],
+  "performance": "struggled" | "solid" | "excelled"
 }
-Keep each array short (0-2 items). Leave arrays empty if nothing clearly applies.
+Keep topic arrays short (0-2 items). "performance" judges ONLY this latest answer: "struggled" if vague, incorrect, or very thin; "solid" if adequate but unremarkable; "excelled" if notably deep, correct, and well-structured.
 
 Question: ${question}
 Answer: ${answer}`;
@@ -24,15 +25,22 @@ const updateMemory = async ({ existingMemory, question, answer }) => {
     const raw = await generate(EXTRACTION_PROMPT(question, answer));
     const cleaned = raw.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(cleaned);
+    
 
-    return {
+    const memory = {
       topicsDiscussed: mergeUnique(existingMemory?.topicsDiscussed, parsed.topicsDiscussed),
       weakAreas: mergeUnique(existingMemory?.weakAreas, parsed.weakAreas),
       strongAreas: mergeUnique(existingMemory?.strongAreas, parsed.strongAreas),
     };
+
+
+    return { memory, performance: parsed.performance || 'solid' };
   } catch (err) {
     console.error('Memory extraction failed, keeping existing memory:', err.message);
-    return existingMemory || { topicsDiscussed: [], weakAreas: [], strongAreas: [] };
+    return {
+      memory: existingMemory || { topicsDiscussed: [], weakAreas: [], strongAreas: [] },
+      performance: 'solid',
+    };
   }
 };
 
