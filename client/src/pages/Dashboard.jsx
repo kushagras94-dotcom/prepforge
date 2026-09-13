@@ -38,6 +38,9 @@ export default function Dashboard() {
           <Link to="/history" className="text-gray-600 hover:text-blue-600 text-sm">
             History
           </Link>
+          <Link to="/resume" className="text-gray-600 hover:text-blue-600 text-sm">
+            Resume
+          </Link>
           <span className="text-gray-600">Hi, {user?.name}</span>
           <button onClick={logout} className="text-red-500 hover:underline text-sm">
             Logout
