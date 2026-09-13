@@ -7,6 +7,7 @@ const interviewRoutes = require('./src/routes/interviewRoutes');
 const scorecardRoutes = require('./src/routes/scorecardRoutes');
 const resumeRoutes = require('./src/routes/resumeRoutes');
 
+
 connectDB();
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/interview', interviewRoutes);
 // ...
 app.use('/api/scorecard', scorecardRoutes);
 app.use('/api/resume', resumeRoutes);
+app.use('/api/tts', require('./src/routes/ttsRoutes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

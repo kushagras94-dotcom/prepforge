@@ -1,6 +1,13 @@
-import { useState,useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
+
+const VOICES = [
+  { id: 'shubh', label: 'Shubh (Energetic, Male)' },
+  { id: 'priya', label: 'Priya (Female)' },
+  { id: 'rahul', label: 'Rahul (Male)' },
+  { id: 'shruti', label: 'Shruti (Female)' },
+];
 
 export default function Interview() {
   const [targetRole, setTargetRole] = useState('Software Engineer');
@@ -15,23 +22,60 @@ export default function Interview() {
   const [started, setStarted] = useState(false);
   const [recording, setRecording] = useState(false);
   const [processingVoice, setProcessingVoice] = useState(false);
+  const [selectedVoiceId, setSelectedVoiceId] = useState(VOICES[0].id);
+  const [muted, setMuted] = useState(false);
   const navigate = useNavigate();
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const currentAudioRef = useRef(null);
 
-  const speak = (text) => {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1;
-    window.speechSynthesis.speak(utterance);
+  const speak = async (text) => {
+    if (muted) return;
+    try {
+      const res = await api.post(
+        '/tts/speak',
+        { text, voice: selectedVoiceId },
+        { responseType: 'blob' }
+      );
+      const audioUrl = URL.createObjectURL(res.data);
+      if (currentAudioRef.current) currentAudioRef.current.pause();
+      const audioEl = new Audio(audioUrl);
+      currentAudioRef.current = audioEl;
+      audioEl.play();
+    } catch (err) {
+      console.error('TTS playback failed:', err.message);
+    }
+  };
+
+  const previewVoice = async (voiceId) => {
+    try {
+      const res = await api.post(
+        '/tts/speak',
+        { text: "Hi, I'll be conducting your mock interview today.", voice: voiceId },
+        { responseType: 'blob' }
+      );
+      const audioUrl = URL.createObjectURL(res.data);
+      if (currentAudioRef.current) currentAudioRef.current.pause();
+      const audioEl = new Audio(audioUrl);
+      currentAudioRef.current = audioEl;
+      audioEl.play();
+    } catch (err) {
+      console.error('Voice preview failed:', err.message);
+    }
+  };
+
+  const toggleMute = () => {
+    if (!muted && currentAudioRef.current) {
+      currentAudioRef.current.pause();
+    }
+    setMuted((m) => !m);
   };
 
   const startInterview = async () => {
     setLoading(true);
     try {
-      const res = await api.post('/interview/start', { targetRole, targetCompany: targetCompany || undefined , difficulty, useResume });
+      const res = await api.post('/interview/start', { targetRole, targetCompany: targetCompany || undefined, difficulty, useResume });
       setTranscriptId(res.data.transcriptId);
       setQuestion(res.data.question);
       setHistory([{ role: 'interviewer', content: res.data.question }]);
@@ -114,6 +158,7 @@ export default function Interview() {
     }
     setProcessingVoice(false);
   };
+
   const endInterview = async () => {
     setLoading(true);
     try {
@@ -155,6 +200,27 @@ export default function Interview() {
             <option value="Medium">Medium</option>
             <option value="Hard">Hard</option>
           </select>
+
+          <label className="block text-sm text-gray-600 mb-1">Interviewer Voice</label>
+          <div className="flex gap-2 mb-4">
+            <select
+              value={selectedVoiceId}
+              onChange={(e) => setSelectedVoiceId(e.target.value)}
+              className="flex-1 border p-2 rounded"
+            >
+              {VOICES.map((v) => (
+                <option key={v.id} value={v.id}>{v.label}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => previewVoice(selectedVoiceId)}
+              className="px-3 border rounded hover:bg-gray-50"
+            >
+              🔊
+            </button>
+          </div>
+
           <label className="flex items-center gap-2 mb-4 text-sm text-gray-600">
             <input
               type="checkbox"
@@ -178,7 +244,17 @@ export default function Interview() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Mock Interview — {targetRole}</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold">Mock Interview — {targetRole}</h1>
+          <button
+            onClick={toggleMute}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+              muted ? 'bg-gray-300 text-gray-700' : 'bg-gray-800 text-white'
+            }`}
+          >
+            {muted ? '🔇 Unmute Interviewer' : '🔊 Mute Interviewer'}
+          </button>
+        </div>
 
         <div className="bg-white rounded-xl shadow-md p-6 mb-4 max-h-96 overflow-y-auto space-y-4">
           {history.map((msg, i) => (
@@ -200,7 +276,7 @@ export default function Interview() {
           ))}
         </div>
 
-<div className="bg-white rounded-xl shadow-md p-4 mb-3">
+        <div className="bg-white rounded-xl shadow-md p-4 mb-3">
           <div className="flex items-center gap-3 mb-3">
             <button
               onClick={recording ? stopRecording : startRecording}
@@ -218,12 +294,12 @@ export default function Interview() {
           </div>
 
           <p className="text-xs text-gray-400 mb-2">Or type your answer instead:</p>
-        <textarea
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          placeholder="Type your answer..."
-          className="w-full border p-3 rounded-lg mb-3 h-28"
-        />
+          <textarea
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="Type your answer..."
+            className="w-full border p-3 rounded-lg mb-3 h-28"
+          />
         </div>
 
         <div className="flex gap-3">
