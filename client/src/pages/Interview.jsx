@@ -160,6 +160,10 @@ export default function Interview() {
   };
 
   const endInterview = async () => {
+    if (recording && mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
     setLoading(true);
     try {
       await api.post(`/interview/${transcriptId}/end`);

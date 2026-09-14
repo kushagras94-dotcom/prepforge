@@ -54,79 +54,82 @@ export default function Scorecard() {
   );
 
   const downloadPDF = () => {
-    const doc = new jsPDF();
-    let y = 20;
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 20;
+  const maxWidth = pageWidth - margin * 2;
+  let y = 20;
 
-    doc.setFontSize(18);
-    doc.setFont(undefined, 'bold');
-    doc.text('Interview Scorecard', 20, y);
-    y += 12;
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Interview Scorecard', margin, y);
+  y += 12;
 
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
 
-    const scoreLines = [
-      `Communication: ${scores.communication}/10`,
-      `Technical Accuracy: ${scores.technicalAccuracy}/10`,
-      `Problem Solving: ${scores.problemSolving}/10`,
-      `Confidence: ${scores.confidence}/10`,
-    ];
-    doc.setFont(undefined, 'bold');
-    doc.text('Scores', 20, y);
-    y += 7;
-    doc.setFont(undefined, 'normal');
-    scoreLines.forEach((line) => {
-      doc.text(line, 20, y);
-      y += 6;
-    });
-    y += 4;
-
-    if (communicationMetrics) {
-      doc.setFont(undefined, 'bold');
-      doc.text('Speaking Analysis', 20, y);
-      y += 7;
-      doc.setFont(undefined, 'normal');
-      doc.text(`Average Pace: ${communicationMetrics.avgWpm} WPM`, 20, y);
-      y += 6;
-      doc.text(`Filler Words: ${communicationMetrics.avgFillerWordsPerAnswer} per answer`, 20, y);
-      y += 6;
-      doc.text(`Long Pauses: ${communicationMetrics.totalPauses}`, 20, y);
-      y += 6;
-      doc.text(`Avg. Pause Time: ${communicationMetrics.avgPauseSeconds}s`, 20, y);
-      y += 10;
-    }
-
-    doc.setFont(undefined, 'bold');
-    doc.text('Overall Feedback', 20, y);
-    y += 7;
-    doc.setFont(undefined, 'normal');
-    const feedbackLines = doc.splitTextToSize(overallFeedback, 170);
-    doc.text(feedbackLines, 20, y);
-    y += feedbackLines.length * 6 + 6;
-
-    doc.setFont(undefined, 'bold');
-    doc.text('Strengths', 20, y);
-    y += 7;
-    doc.setFont(undefined, 'normal');
-    strengths.forEach((s) => {
-      const lines = doc.splitTextToSize(`- ${s}`, 170);
-      doc.text(lines, 20, y);
-      y += lines.length * 6;
-    });
+  const scoreLines = [
+    `Communication: ${scores.communication}/10`,
+    `Technical Accuracy: ${scores.technicalAccuracy}/10`,
+    `Problem Solving: ${scores.problemSolving}/10`,
+    `Confidence: ${scores.confidence}/10`,
+  ];
+  doc.setFont('helvetica', 'bold');
+  doc.text('Scores', margin, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  scoreLines.forEach((line) => {
+    doc.text(line, margin, y);
     y += 6;
+  });
+  y += 4;
 
-    doc.setFont(undefined, 'bold');
-    doc.text('Areas to Improve', 20, y);
+  if (communicationMetrics) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Speaking Analysis', margin, y);
     y += 7;
-    doc.setFont(undefined, 'normal');
-    areasToImprove.forEach((a) => {
-      const lines = doc.splitTextToSize(`- ${a}`, 170);
-      doc.text(lines, 20, y);
-      y += lines.length * 6;
-    });
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Average Pace: ${communicationMetrics.avgWpm} WPM`, margin, y);
+    y += 6;
+    doc.text(`Filler Words: ${communicationMetrics.avgFillerWordsPerAnswer} per answer`, margin, y);
+    y += 6;
+    doc.text(`Long Pauses: ${communicationMetrics.totalPauses}`, margin, y);
+    y += 6;
+    doc.text(`Avg. Pause Time: ${communicationMetrics.avgPauseSeconds}s`, margin, y);
+    y += 10;
+  }
 
-    doc.save('PrepForge_Scorecard.pdf');
-  };
+  doc.setFont('helvetica', 'bold');
+  doc.text('Overall Feedback', margin, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  const feedbackLines = doc.splitTextToSize(overallFeedback, maxWidth);
+  doc.text(feedbackLines, margin, y);
+  y += feedbackLines.length * 6 + 6;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Strengths', margin, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  strengths.forEach((s) => {
+    const lines = doc.splitTextToSize(`- ${s}`, maxWidth);
+    doc.text(lines, margin, y);
+    y += lines.length * 6;
+  });
+  y += 6;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Areas to Improve', margin, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  areasToImprove.forEach((a) => {
+    const lines = doc.splitTextToSize(`- ${a}`, maxWidth);
+    doc.text(lines, margin, y);
+    y += lines.length * 6;
+  });
+
+  doc.save('PrepForge_Scorecard.pdf');
+};
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
